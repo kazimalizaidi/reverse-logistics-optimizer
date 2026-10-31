@@ -1,0 +1,129 @@
+scenario,hub,facility,disposition,planned_units,distance_km,transit_days,sla_days,late
+A_greedy_nearest,Karachi,Karachi Hub,restock,1084.47,15.0,0.53,2.0,False
+A_greedy_nearest,Karachi,Karachi Hub,refurbish,855.0,15.0,0.53,4.0,False
+A_greedy_nearest,Karachi,Karachi Hub,scrap,376.2,15.0,0.53,7.0,False
+A_greedy_nearest,Karachi,Multan Multi-Site,refurbish,52.32,956.3,2.24,4.0,False
+A_greedy_nearest,Lahore,Lahore Refurb Center,restock,882.09,15.0,0.53,2.0,False
+A_greedy_nearest,Lahore,Lahore Refurb Center,refurbish,712.3,15.0,0.53,4.0,False
+A_greedy_nearest,Lahore,Faisalabad Recycling,scrap,342.61,151.2,0.77,7.0,False
+A_greedy_nearest,Islamabad,Islamabad Restock DC,restock,522.11,15.0,0.53,2.0,False
+A_greedy_nearest,Islamabad,Faisalabad Recycling,refurbish,371.27,323.1,1.09,4.0,False
+A_greedy_nearest,Islamabad,Faisalabad Recycling,scrap,173.61,323.1,1.09,7.0,False
+A_greedy_nearest,Faisalabad,Lahore Refurb Center,restock,412.3,151.2,0.77,2.0,False
+A_greedy_nearest,Faisalabad,Lahore Refurb Center,refurbish,298.64,151.2,0.77,4.0,False
+A_greedy_nearest,Faisalabad,Faisalabad Recycling,scrap,128.06,15.0,0.53,7.0,False
+A_greedy_nearest,Multan,Multan Multi-Site,restock,289.21,15.0,0.53,2.0,False
+A_greedy_nearest,Multan,Multan Multi-Site,refurbish,234.82,15.0,0.53,4.0,False
+A_greedy_nearest,Multan,Multan Multi-Site,scrap,100.97,15.0,0.53,7.0,False
+A_greedy_nearest,Peshawar,Lahore Refurb Center,refurbish,178.86,498.6,1.41,4.0,False
+A_greedy_nearest,Peshawar,Islamabad Restock DC,restock,369.15,189.0,0.84,2.0,False
+A_greedy_nearest,Peshawar,Faisalabad Recycling,refurbish,141.73,419.2,1.26,4.0,False
+A_greedy_nearest,Peshawar,Faisalabad Recycling,scrap,135.27,419.2,1.26,7.0,False
+A_greedy_nearest,Hyderabad,Karachi Hub,restock,242.25,193.7,0.85,2.0,False
+A_greedy_nearest,Hyderabad,Karachi Hub,scrap,78.79,193.7,0.85,7.0,False
+A_greedy_nearest,Hyderabad,Multan Multi-Site,refurbish,180.96,795.1,1.95,4.0,False
+A_greedy_nearest,Quetta,Multan Multi-Site,restock,188.7,562.0,1.52,2.0,False
+A_greedy_nearest,Quetta,Multan Multi-Site,refurbish,131.32,562.0,1.52,4.0,False
+A_greedy_nearest,Quetta,Multan Multi-Site,scrap,64.98,562.0,1.52,7.0,False
+A_greedy_nearest,Sialkot,Lahore Refurb Center,restock,209.57,142.2,0.76,2.0,False
+A_greedy_nearest,Sialkot,Lahore Refurb Center,refurbish,7.2,142.2,0.76,4.0,False
+A_greedy_nearest,Sialkot,Faisalabad Recycling,scrap,81.03,227.5,0.91,7.0,False
+A_greedy_nearest,Sialkot,Multan Multi-Site,refurbish,154.19,505.9,1.42,4.0,False
+B_milp_prior_only,Karachi,Karachi Hub,restock,1273.65,15.0,0.53,2.0,False
+B_milp_prior_only,Karachi,Karachi Hub,refurbish,667.78,15.0,0.53,4.0,False
+B_milp_prior_only,Karachi,Karachi Hub,scrap,426.58,15.0,0.53,7.0,False
+B_milp_prior_only,Lahore,Lahore Refurb Center,restock,1041.83,15.0,0.53,2.0,False
+B_milp_prior_only,Lahore,Lahore Refurb Center,refurbish,546.23,15.0,0.53,4.0,False
+B_milp_prior_only,Lahore,Multan Multi-Site,scrap,348.94,408.8,1.24,7.0,False
+B_milp_prior_only,Islamabad,Lahore Refurb Center,refurbish,300.89,351.2,1.14,4.0,False
+B_milp_prior_only,Islamabad,Islamabad Restock DC,restock,573.89,15.0,0.53,2.0,False
+B_milp_prior_only,Faisalabad,Karachi Hub,scrap,97.64,1231.7,2.74,7.0,False
+B_milp_prior_only,Faisalabad,Lahore Refurb Center,restock,173.0,151.2,0.77,2.0,False
+B_milp_prior_only,Faisalabad,Islamabad Restock DC,restock,278.26,323.1,1.09,2.0,False
+B_milp_prior_only,Faisalabad,Multan Multi-Site,refurbish,236.6,278.5,1.01,4.0,False
+B_milp_prior_only,Faisalabad,Multan Multi-Site,scrap,53.5,278.5,1.01,7.0,False
+B_milp_prior_only,Multan,Multan Multi-Site,restock,336.16,15.0,0.53,2.0,False
+B_milp_prior_only,Multan,Multan Multi-Site,refurbish,176.25,15.0,0.53,4.0,False
+B_milp_prior_only,Multan,Multan Multi-Site,scrap,112.59,15.0,0.53,7.0,False
+B_milp_prior_only,Peshawar,Lahore Refurb Center,refurbish,222.41,498.6,1.41,4.0,False
+B_milp_prior_only,Peshawar,Islamabad Restock DC,restock,443.73,189.0,0.84,2.0,False
+B_milp_prior_only,Peshawar,Multan Multi-Site,refurbish,10.24,557.7,1.51,4.0,False
+B_milp_prior_only,Peshawar,Multan Multi-Site,scrap,2.04,557.7,1.51,7.0,False
+B_milp_prior_only,Hyderabad,Karachi Hub,restock,270.0,193.7,0.85,2.0,False
+B_milp_prior_only,Hyderabad,Karachi Hub,refurbish,11.57,193.7,0.85,4.0,False
+B_milp_prior_only,Hyderabad,Karachi Hub,scrap,90.43,193.7,0.85,7.0,False
+B_milp_prior_only,Hyderabad,Multan Multi-Site,refurbish,129.99,795.1,1.95,4.0,False
+B_milp_prior_only,Quetta,Karachi Hub,scrap,69.36,768.9,1.9,7.0,False
+B_milp_prior_only,Quetta,Multan Multi-Site,restock,207.07,562.0,1.52,2.0,False
+B_milp_prior_only,Quetta,Multan Multi-Site,refurbish,108.57,562.0,1.52,4.0,False
+B_milp_prior_only,Sialkot,Lahore Refurb Center,refurbish,127.46,142.2,0.76,4.0,False
+B_milp_prior_only,Sialkot,Islamabad Restock DC,restock,243.11,248.0,0.95,2.0,False
+B_milp_prior_only,Sialkot,Multan Multi-Site,scrap,81.42,505.9,1.42,7.0,False
+B_milp_prior_only,Islamabad,DISPOSAL,scrap,192.21,,,7.0,False
+B_milp_prior_only,Peshawar,DISPOSAL,scrap,146.57,,,7.0,False
+C_milp_classifier,Karachi,Karachi Hub,restock,1084.47,15.0,0.53,2.0,False
+C_milp_classifier,Karachi,Karachi Hub,refurbish,855.0,15.0,0.53,4.0,False
+C_milp_classifier,Karachi,Karachi Hub,scrap,246.15,15.0,0.53,7.0,False
+C_milp_classifier,Karachi,Faisalabad Recycling,scrap,32.79,1231.7,2.74,7.0,False
+C_milp_classifier,Karachi,Multan Multi-Site,refurbish,52.32,956.3,2.24,4.0,False
+C_milp_classifier,Karachi,Multan Multi-Site,scrap,97.26,956.3,2.24,7.0,False
+C_milp_classifier,Lahore,Lahore Refurb Center,restock,882.09,15.0,0.53,2.0,False
+C_milp_classifier,Lahore,Lahore Refurb Center,refurbish,712.3,15.0,0.53,4.0,False
+C_milp_classifier,Lahore,Faisalabad Recycling,scrap,342.61,151.2,0.77,7.0,False
+C_milp_classifier,Islamabad,Lahore Refurb Center,restock,522.11,351.2,1.14,2.0,False
+C_milp_classifier,Islamabad,Lahore Refurb Center,refurbish,323.31,351.2,1.14,4.0,False
+C_milp_classifier,Islamabad,Faisalabad Recycling,refurbish,47.97,323.1,1.09,4.0,False
+C_milp_classifier,Islamabad,Faisalabad Recycling,scrap,173.61,323.1,1.09,7.0,False
+C_milp_classifier,Faisalabad,Karachi Hub,restock,1.22,1231.7,2.74,2.0,True
+C_milp_classifier,Faisalabad,Lahore Refurb Center,restock,96.23,151.2,0.77,2.0,False
+C_milp_classifier,Faisalabad,Faisalabad Recycling,refurbish,298.64,15.0,0.53,4.0,False
+C_milp_classifier,Faisalabad,Faisalabad Recycling,scrap,128.06,15.0,0.53,7.0,False
+C_milp_classifier,Faisalabad,Multan Multi-Site,restock,314.85,278.5,1.01,2.0,False
+C_milp_classifier,Multan,Karachi Hub,restock,289.21,956.3,2.24,2.0,True
+C_milp_classifier,Multan,Multan Multi-Site,refurbish,234.82,15.0,0.53,4.0,False
+C_milp_classifier,Multan,Multan Multi-Site,scrap,100.97,15.0,0.53,7.0,False
+C_milp_classifier,Peshawar,Faisalabad Recycling,refurbish,65.01,419.2,1.26,4.0,False
+C_milp_classifier,Peshawar,Faisalabad Recycling,scrap,135.27,419.2,1.26,7.0,False
+C_milp_classifier,Peshawar,Multan Multi-Site,restock,369.15,557.7,1.51,2.0,False
+C_milp_classifier,Peshawar,Multan Multi-Site,refurbish,255.57,557.7,1.51,4.0,False
+C_milp_classifier,Hyderabad,Karachi Hub,restock,242.25,193.7,0.85,2.0,False
+C_milp_classifier,Hyderabad,Multan Multi-Site,refurbish,180.96,795.1,1.95,4.0,False
+C_milp_classifier,Hyderabad,Multan Multi-Site,scrap,78.79,795.1,1.95,7.0,False
+C_milp_classifier,Quetta,Karachi Hub,restock,188.7,768.9,1.9,2.0,False
+C_milp_classifier,Quetta,Multan Multi-Site,refurbish,131.32,562.0,1.52,4.0,False
+C_milp_classifier,Quetta,Multan Multi-Site,scrap,64.98,562.0,1.52,7.0,False
+C_milp_classifier,Sialkot,Lahore Refurb Center,restock,209.57,142.2,0.76,2.0,False
+C_milp_classifier,Sialkot,Lahore Refurb Center,refurbish,161.39,142.2,0.76,4.0,False
+C_milp_classifier,Sialkot,Faisalabad Recycling,scrap,81.03,227.5,0.91,7.0,False
+D_milp_oracle,Karachi,Karachi Hub,restock,1088.0,15.0,0.53,2.0,False
+D_milp_oracle,Karachi,Karachi Hub,refurbish,892.0,15.0,0.53,4.0,False
+D_milp_oracle,Karachi,Karachi Hub,scrap,388.0,15.0,0.53,7.0,False
+D_milp_oracle,Lahore,Lahore Refurb Center,restock,859.0,15.0,0.53,2.0,False
+D_milp_oracle,Lahore,Lahore Refurb Center,refurbish,749.0,15.0,0.53,4.0,False
+D_milp_oracle,Lahore,Faisalabad Recycling,scrap,329.0,151.2,0.77,7.0,False
+D_milp_oracle,Islamabad,Lahore Refurb Center,restock,506.0,351.2,1.14,2.0,False
+D_milp_oracle,Islamabad,Lahore Refurb Center,refurbish,336.0,351.2,1.14,4.0,False
+D_milp_oracle,Islamabad,Faisalabad Recycling,refurbish,5.0,323.1,1.09,4.0,False
+D_milp_oracle,Islamabad,Faisalabad Recycling,scrap,179.0,323.1,1.09,7.0,False
+D_milp_oracle,Islamabad,Multan Multi-Site,refurbish,41.0,545.2,1.49,4.0,False
+D_milp_oracle,Faisalabad,Lahore Refurb Center,restock,239.0,151.2,0.77,2.0,False
+D_milp_oracle,Faisalabad,Faisalabad Recycling,refurbish,288.0,15.0,0.53,4.0,False
+D_milp_oracle,Faisalabad,Faisalabad Recycling,scrap,132.0,15.0,0.53,7.0,False
+D_milp_oracle,Faisalabad,Multan Multi-Site,restock,180.0,278.5,1.01,2.0,False
+D_milp_oracle,Multan,Karachi Hub,restock,129.0,956.3,2.24,2.0,True
+D_milp_oracle,Multan,Multan Multi-Site,restock,167.0,15.0,0.53,2.0,False
+D_milp_oracle,Multan,Multan Multi-Site,refurbish,231.0,15.0,0.53,4.0,False
+D_milp_oracle,Multan,Multan Multi-Site,scrap,98.0,15.0,0.53,7.0,False
+D_milp_oracle,Peshawar,Faisalabad Recycling,scrap,130.0,419.2,1.26,7.0,False
+D_milp_oracle,Peshawar,Multan Multi-Site,restock,373.0,557.7,1.51,2.0,False
+D_milp_oracle,Peshawar,Multan Multi-Site,refurbish,322.0,557.7,1.51,4.0,False
+D_milp_oracle,Hyderabad,Karachi Hub,restock,233.0,193.7,0.85,2.0,False
+D_milp_oracle,Hyderabad,Karachi Hub,refurbish,8.0,193.7,0.85,4.0,False
+D_milp_oracle,Hyderabad,Karachi Hub,scrap,76.0,193.7,0.85,7.0,False
+D_milp_oracle,Hyderabad,Multan Multi-Site,refurbish,185.0,795.1,1.95,4.0,False
+D_milp_oracle,Quetta,Karachi Hub,restock,189.0,768.9,1.9,2.0,False
+D_milp_oracle,Quetta,Multan Multi-Site,refurbish,121.0,562.0,1.52,4.0,False
+D_milp_oracle,Quetta,Multan Multi-Site,scrap,75.0,562.0,1.52,7.0,False
+D_milp_oracle,Sialkot,Lahore Refurb Center,restock,196.0,142.2,0.76,2.0,False
+D_milp_oracle,Sialkot,Lahore Refurb Center,refurbish,175.0,142.2,0.76,4.0,False
+D_milp_oracle,Sialkot,Faisalabad Recycling,scrap,81.0,227.5,0.91,7.0,False

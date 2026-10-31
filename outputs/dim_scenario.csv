@@ -1,0 +1,5 @@
+scenario,scenario_label,sort_order
+A_greedy_nearest,A  Nearest-facility,1
+B_milp_prior_only,B  No classifier,2
+C_milp_classifier,C  Classifier + MILP,3
+D_milp_oracle,D  Perfect information,4

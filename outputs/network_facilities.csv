@@ -1,0 +1,6 @@
+facility,weekly_capacity,fixed_cost_weekly,cap_restock,cap_refurbish,cap_scrap
+Karachi Hub,3060.0,14000.0,1980.0,900.0,720.0
+Lahore Refurb Center,3060.0,12000.0,2160.0,1260.0000000000002,0.0
+Islamabad Restock DC,1620.0,7000.0,1620.0,0.0,0.0
+Faisalabad Recycling,1620.0,9000.0,0.0,540.0,1080.0
+Multan Multi-Site,1980.0,6500.0,720.0,900.0,630.0000000000001

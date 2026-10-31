@@ -1,0 +1,77 @@
+{
+  "ensemble_uncalibrated": {
+    "accuracy": 0.8154444444444444,
+    "macro_f1": 0.7685319436619005,
+    "log_loss": 0.46938146550719073,
+    "brier": 0.268100940834657,
+    "ece_top_label": 0.0063269403247510824,
+    "confusion_matrix(rows=true, cols=pred)": [
+      [
+        3862,
+        213,
+        84
+      ],
+      [
+        432,
+        2656,
+        265
+      ],
+      [
+        261,
+        406,
+        821
+      ]
+    ],
+    "classes": [
+      "restock",
+      "refurbish",
+      "scrap"
+    ],
+    "reference_majority_class_accuracy": 0.4621111111111111,
+    "reference_prior_log_loss": 1.041564841505568,
+    "reference_oracle_accuracy": 0.8188888888888889,
+    "reference_oracle_log_loss": 0.46130329183720764
+  },
+  "ensemble_calibrated": {
+    "accuracy": 0.8171111111111111,
+    "macro_f1": 0.7712224926662606,
+    "log_loss": 0.46791287615275007,
+    "brier": 0.267072917950617,
+    "ece_top_label": 0.009676689203213516,
+    "confusion_matrix(rows=true, cols=pred)": [
+      [
+        3865,
+        207,
+        87
+      ],
+      [
+        433,
+        2656,
+        264
+      ],
+      [
+        254,
+        401,
+        833
+      ]
+    ],
+    "classes": [
+      "restock",
+      "refurbish",
+      "scrap"
+    ],
+    "reference_majority_class_accuracy": 0.4621111111111111,
+    "reference_prior_log_loss": 1.041564841505568,
+    "reference_oracle_accuracy": 0.8188888888888889,
+    "reference_oracle_log_loss": 0.46130329183720764
+  },
+  "training_class_prior": {
+    "restock": 0.5379,
+    "refurbish": 0.282,
+    "scrap": 0.1801
+  },
+  "volume_forecast_wape_hub_x_disposition": {
+    "classifier_expected": 0.02817880600416453,
+    "prior_based": 0.1823655555555555
+  }
+}
