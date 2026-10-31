@@ -268,6 +268,12 @@ pytest -q
 
 ---
 
+# 🎧 Project Soundtrack
+
+*This track was on loop while working on this project*
+
+[Next to You - Alicks](https://open.spotify.com/track/36MF5O3oyr7RppWoG69jca?si=d62468106cea46e8)
+
 **Star this repository if you found it interesting!** ⭐
 
 made with ❤️ by **kazim**
