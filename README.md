@@ -171,7 +171,7 @@ Focused entirely on three things for the selected plan: processing backlog, faci
 ## 📂 Repository Structure
 
 ```text
-reverse-logistics-network-optimizer/
+reverse-logistics-optimizer/
 ├── app.py                      # Streamlit Returns Control Tower
 ├── run_pipeline.py             # data -> classifier -> MILP -> evaluation -> outputs/
 ├── rl_network/
