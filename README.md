@@ -11,7 +11,7 @@
 
 # 📖 Project Overview
 
-Most supply chain frameworks look at the forward flow: getting products to customers. This one looks at the way back. When an e-commerce or manufacturing brand takes returns, every item has to be sent somewhere (restock, refurbish or scrap), and each choice trades off shipping cost, processing capacity, delivery deadlines, recovered value and emissions. 
+Most supply chain frameworks look at the forward flow: getting products to customers. This one looks at the way back. When an e-commerce or manufacturing brand takes returns, every item has to be sent somewhere (restock, refurbish or scrap), and each choice trades off shipping cost, processing capacity, delivery deadlines, recovered value and emissions, so what my framework actually does is
 
 1. **Predict** what each return will become *before* it reaches a warehouse.
 2. **Optimize** where every return should be routed, and which facilities should be open.
