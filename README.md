@@ -48,8 +48,6 @@ Olist has **no returns table**, so this project is explicit about what each numb
 
 ## 📸 Dashboard Preview
 
-> Screenshots are of the Streamlit app in this repository, showing the real week of 2 April 2018. Run it locally for the interactive version.
-
 ### 🟢 Returns Control Tower (classifier-driven plan)
 
 ![Dashboard overview](images/dashboard-overview.png)
