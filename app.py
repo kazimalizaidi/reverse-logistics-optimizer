@@ -4,8 +4,9 @@ Returns Control Tower  -  Streamlit dashboard.
 Run:  python run_pipeline.py   (once, produces outputs/)
       streamlit run app.py
 
-Reads only the CSVs in outputs/. Focus: processing backlog, facility SLA breaches and
-recaptured inventory value margins for the selected plan.
+Reads only the files in outputs/. Focus: processing backlog, facility SLA breaches and
+recaptured inventory value margins for the selected plan, on real Olist marketplace data
+(return candidates = 1-2 star reviews; dispositions, facilities and costs are assumptions).
 """
 import json
 import re
@@ -19,7 +20,7 @@ import streamlit as st
 from rl_network.config import DISPOSITIONS, FACILITIES, HUBS
 
 OUT = Path(__file__).parent / "outputs"
-OUTLINE = json.load(open(Path(__file__).parent / "data" / "south_asia_outline.json"))["countries"]
+OUTLINE = json.load(open(Path(__file__).parent / "data" / "brazil_outline.json"))["countries"]
 
 # ---------------------------------------------------------------- palette
 INK, SURF, LINE = "#070B0A", "#0E1514", "#1B2926"
@@ -29,14 +30,14 @@ DISP_COLOR = {"restock": MINT, "refurbish": LIME, "scrap": SAGE}
 
 SCEN = {
     "A_greedy_nearest":  ("Nearest-facility baseline", "A"),
-    "B_milp_prior_only": ("MILP, history-only forecast", "B"),
+    "B_milp_prior_only": ("MILP, hub-average forecast", "B"),
     "C_milp_classifier": ("MILP, classifier-driven", "C"),
     "D_milp_oracle":     ("MILP, perfect information", "D"),
 }
 
-LABEL_POS = {"Karachi": "bottom center", "Lahore": "bottom right", "Islamabad": "top right", "Faisalabad": "middle left",
-             "Multan": "bottom right", "Peshawar": "top left", "Hyderabad": "middle right", "Quetta": "bottom center",
-             "Sialkot": "middle right"}
+LABEL_POS = {"São Paulo": "top left", "Rio de Janeiro": "bottom right", "Belo Horizonte": "middle right",
+             "Curitiba": "middle left", "Porto Alegre": "middle left", "Brasília": "middle left",
+             "Salvador": "middle right", "Recife": "bottom left", "Belém": "middle right"}
 SHORT = {"A_greedy_nearest": "Greedy baseline", "B_milp_prior_only": "No classifier",
          "C_milp_classifier": "Classifier MILP", "D_milp_oracle": "Oracle MILP"}
 
@@ -187,10 +188,12 @@ def H(s: str):
     st.markdown(re.sub(r"\n\s+", "\n", s.strip()), unsafe_allow_html=True)
 
 
-def usd(x, signed=False):
+def brl(x, signed=False):
+    """Brazilian reais. The dollar sign inside 'R$' is written as an HTML entity so Streamlit's
+    markdown does not read pairs of them as LaTeX."""
     s = f"{abs(x):,.0f}"
     sign = ("+" if x > 0 else "-" if x < 0 else "") if signed else ("-" if x < 0 else "")
-    return f"{sign}&#36;{s}"
+    return f"{sign}R&#36;{s}"
 
 
 def num(x, d=0):
@@ -245,17 +248,34 @@ def load():
     need = ["scenario_summary.csv", "facility_kpis.csv", "routing_plan.csv"]
     if not all((OUT / n).exists() for n in need):
         return None
-    return tuple(pd.read_csv(OUT / n) for n in need)
+    cfg = json.load(open(OUT / "run_config.json")) if (OUT / "run_config.json").exists() else {}
+    return tuple(pd.read_csv(OUT / n) for n in need) + (cfg,)
 
 
 data = load()
 if data is None:
     st.error("No pipeline outputs found. Run `python run_pipeline.py` first, then reload this page.")
     st.stop()
-summary, fac_all, routes_all = data
+summary, fac_all, routes_all, CFG = data
 summary = summary.set_index("scenario")
 
 CITY = {f["name"]: f["city"] for f in FACILITIES}
+_nf = OUT / "network_facilities.csv"
+LINE_CAP = pd.read_csv(_nf).set_index("facility") if _nf.exists() else None
+
+
+def full_lines(row):
+    """Processing lines (restock / refurbish / scrap) running at their own capacity limit.
+    A backlogged line processes exactly its capacity, so processed == capacity identifies it."""
+    if LINE_CAP is None or row.facility not in LINE_CAP.index:
+        return []
+    return [d for d in DISPOSITIONS
+            if LINE_CAP.loc[row.facility, f"cap_{d}"] > 0
+            and row[f"units_{d}"] >= LINE_CAP.loc[row.facility, f"cap_{d}"] - 1.0]
+
+_ws = pd.Timestamp(CFG["planning_week_start"]) if CFG.get("planning_week_start") else None
+WEEK_LABEL = f"{_ws.day} {_ws.strftime('%b %Y')}" if _ws is not None else "planning week"
+SURGE = CFG.get("week_vs_reference")
 XY = {h[0]: (h[1], h[2]) for h in HUBS}
 
 # ---------------------------------------------------------------- sidebar
@@ -286,7 +306,7 @@ base_label = f"plan {SCEN[base][1]}"
 with st.sidebar:
     H(f"""
     <div class="side-sec">Network</div>
-    <div class="side-card"><div class="n">{num(S.units_returned)}</div><div class="l">returns in the planning week</div></div>
+    <div class="side-card"><div class="n">{num(S.units_returned)}</div><div class="l">return candidates, week of {WEEK_LABEL}</div></div>
     <div class="side-card"><div class="n">{int(S.facilities_open)} / {len(F)} sites open</div><div class="l">{len(HUBS)} collection hubs feed them</div></div>
     <div class="side-sec">Legend</div>
     <div class="legend">
@@ -295,7 +315,10 @@ with st.sidebar:
     </div>
     <div class="side-sec">Reading guide</div>
     <div class="l" style="font-size:12px;color:{MUTED};line-height:1.55">KPIs replay the actual week through the selected plan.
-    Lanes on the map show the plan itself. Backlog is load above weekly capacity.</div>""")
+    Lanes on the map show the plan itself. Backlog is unplanned load above capacity; units the plan diverts to disposal are shown separately.</div>
+    <div class="side-sec">Data</div>
+    <div class="l" style="font-size:12px;color:{MUTED};line-height:1.55">Real Olist marketplace orders. A <b style="color:{TEXT}">return candidate</b>
+    is a delivered order with a 1-2 star review (a proxy: Olist has no returns table). Disposition outcomes, facilities and costs are assumptions.</div>""")
 
 # ---------------------------------------------------------------- header
 attention = int(((F.backlog_units > 0.5) | (F.sla_breach_units > 0.5)).sum())
@@ -305,7 +328,7 @@ with c1:
     H(f"""
     <div class="crumb">Operations / <b>Returns control tower</b></div>
     <div class="h1">Network health, <em>planning week</em></div>
-    <div class="sub"><b>{num(S.units_returned)}</b> returns across <b>{len(HUBS)}</b> hubs and <b>{len(F)}</b> facilities.
+    <div class="sub">Week of <b>{WEEK_LABEL}</b>: <b>{num(S.units_returned)}</b> return candidates{f", <b>{SURGE:.1f}x</b> the usual weekly volume," if SURGE else ""} across <b>{len(HUBS)}</b> hubs and <b>{len(F)}</b> facilities.
     {"<b>" + str(attention) + "</b> facilit" + ("y needs" if attention == 1 else "ies need") + " attention." if attention else "No facility needs attention."}</div>""")
 with c2:
     H(f"""<div style="display:flex;justify-content:flex-end;padding-top:6px"><span class="chip"><span class="dot {status_dot}"></span>
@@ -326,25 +349,25 @@ with k1:
     H(f"""<div class="card kpi"><div class="glow" style="background:{AMBER}"></div>
     <div class="kpi-top"><span class="eyebrow">Processing backlog</span>{spark(list(F.backlog_units), AMBER, labels=labels)}</div>
     <div class="kpi-val">{num(S.backlog_units)}<small>units</small></div>
-    <div class="kpi-sub">{f"Worst site clears in {worst_days:.1f} days of full-rate work" if S.backlog_units > 0.5 else "Every site clears its load within the week"}</div>
+    <div class="kpi-sub">{f"+ {num(S.units_to_disposal)} units diverted to disposal" if S.units_to_disposal > 0.5 else "Every site clears its load within the week"}</div>
     {delta(S.backlog_units, B.backlog_units, True, lambda d: num(d) + " units", base_label)}</div>""")
 with k2:
     H(f"""<div class="card kpi"><div class="glow" style="background:{CORAL}"></div>
     <div class="kpi-top"><span class="eyebrow">Facility SLA breaches</span>{spark(list(F.sla_breach_units), CORAL, labels=labels)}</div>
     <div class="kpi-val">{num(S.sla_breach_units)}<small>units · {S.sla_breach_rate:.1%}</small></div>
-    <div class="kpi-sub">{f"Concentrated at {breach_site.facility}" if breach_site is not None else "No unit arrives after its SLA"}</div>
+    <div class="kpi-sub">{f"Concentrated at {breach_site.city}" if breach_site is not None else "No unit arrives after its SLA"}</div>
     {delta(S.sla_breach_units, B.sla_breach_units, True, lambda d: num(d) + " units", base_label)}</div>""")
 with k3:
     H(f"""<div class="card kpi"><div class="glow" style="background:{LIME}"></div>
     <div class="kpi-top"><span class="eyebrow">Recaptured value</span>{ring(S.value_recovery_rate, LIME)}</div>
-    <div class="kpi-val">{usd(S.recovered_value)}</div>
-    <div class="kpi-sub">{S.value_recovery_rate:.1%} of {usd(S.original_value)} original value</div>
-    {delta(S.recovered_value, B.recovered_value, False, lambda d: usd(d), base_label)}</div>""")
+    <div class="kpi-val">{brl(S.recovered_value)}</div>
+    <div class="kpi-sub">{S.value_recovery_rate:.1%} of {brl(S.original_value)} original value</div>
+    {delta(S.recovered_value, B.recovered_value, False, lambda d: brl(d), base_label)}</div>""")
 with k4:
     H(f"""<div class="card kpi"><div class="glow" style="background:{MINT}"></div>
     <div class="kpi-top"><span class="eyebrow">Recapture margin</span>{spark(net_vals, MINT, hi=scen_keys.index(scen), labels=net_labels)}</div>
     <div class="kpi-val">{margin:.1%}</div>
-    <div class="kpi-sub">{usd(S.net_contribution)} net after {usd(S.cost_to_serve)} cost to serve</div>
+    <div class="kpi-sub">{brl(S.net_contribution)} net after {brl(S.cost_to_serve)} cost to serve</div>
     {delta(margin * 100, base_margin * 100, False, lambda d: f"{d:.1f} pts", base_label)}</div>""")
 st.write("")
 
@@ -382,15 +405,22 @@ with right:
             rows.append(f'<div class="ul-row"><div class="ul-head"><span style="color:{DIM}">{r.facility}</span>'
                         f'<span>closed</span></div><div class="bar"></div></div>')
             continue
-        col = CORAL if r.load > 1.0001 else AMBER if r.load > .9 else MINT
-        rows.append(f'<div class="ul-row"><div class="ul-head"><span>{r.facility}</span><span>{r.load:.0%}</span></div>'
+        col = CORAL if (r.load > 1.0001 or r.backlog_units > .5) else AMBER if r.load > .9 else MINT
+        tag = " · line full" if (r.backlog_units > .5 and r.load <= 1.0001) else ""
+        rows.append(f'<div class="ul-row"><div class="ul-head"><span>{r.facility}</span><span>{r.load:.0%}{tag}</span></div>'
                     f'<div class="bar"><i style="width:{min(r.load, 1) * 100:.1f}%;background:linear-gradient(90deg,{col}66,{col})"></i></div></div>')
     # watch item: backlog first, otherwise the largest SLA breach, otherwise all-clear
     if S.backlog_units > 0.5:
         w = F.loc[F.backlog_units.idxmax()]
         cls, title = "coral", "WATCH ITEM · BACKLOG"
-        msg = (f"<b>{w.facility}</b> is assigned <b>{w.load:.0%}</b> of its weekly capacity. "
-               f"<b>{num(w.backlog_units)}</b> units cannot be processed this week, about <b>{w.backlog_days:.1f} days</b> of full-rate work.")
+        fl = full_lines(w)
+        if w.load > 1.0001:
+            msg = (f"<b>{w.facility}</b> is assigned <b>{w.load:.0%}</b> of its weekly capacity. "
+                   f"<b>{num(w.backlog_units)}</b> units cannot be processed this week, about <b>{w.backlog_days:.1f} days</b> of full-rate work.")
+        else:
+            where = f"its <b>{' and '.join(fl)}</b> line is full" if fl else "one processing line is full"
+            msg = (f"At <b>{w.facility}</b>, {where}: <b>{num(w.backlog_units)}</b> units cannot be processed this week, "
+                   f"about <b>{w.backlog_days:.1f} days</b> of full-rate work. The site as a whole is at <b>{w.load:.0%}</b> of total capacity.")
     elif S.sla_breach_units > 0.5:
         late = R[(R.late == True) & (R.facility != "DISPOSAL")].sort_values("planned_units", ascending=False)
         cls, title = "coral", "WATCH ITEM · SLA"
@@ -417,7 +447,7 @@ with mapc:
         panel_head("Return lanes", "curves = planned flows · coral = arrives after SLA")
         fig = go.Figure()
         for cname, rings in OUTLINE.items():
-            home = cname == "Pakistan"
+            home = cname == "Brazil"
             for ring_ in rings:
                 xs, ys = zip(*ring_)
                 fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", fill="toself", hoverinfo="skip", showlegend=False,
@@ -456,9 +486,9 @@ with mapc:
                                  showlegend=False, marker=dict(size=13, symbol="diamond", color=scol, line=dict(width=2, color=INK)),
                                  hovertext=[f"{r.facility}<br>{'closed' if not r.open else f'load {r.load:.0%}'}" for _, r in F.iterrows()],
                                  hoverinfo="text"))
-        plot_layout(fig, 440).update_layout(
-            xaxis=dict(range=[60.2, 77.8], visible=False, fixedrange=True),
-            yaxis=dict(range=[23.2, 36.6], visible=False, scaleanchor="x", scaleratio=1.1547, fixedrange=True),
+        plot_layout(fig, 520).update_layout(
+            xaxis=dict(range=[-74.6, -32.5], visible=False, fixedrange=True),
+            yaxis=dict(range=[-34.6, 5.8], visible=False, scaleanchor="x", scaleratio=1.0353, fixedrange=True),
             plot_bgcolor="#080D0C", margin=dict(l=0, r=0, t=0, b=0))
         st.plotly_chart(fig, config={"displayModeBar": False}, width="stretch")
         H(f'<div class="legend" style="margin:6px 4px 8px"><span style="--c:{LIME}">Facility, healthy</span>'
@@ -495,8 +525,8 @@ with detc:
         <div><div class="k">Assigned</div><div class="v">{num(r.units_assigned)}</div></div>
         <div><div class="k">Backlog</div><div class="v" style="color:{AMBER if r.backlog_units > .5 else TEXT}">{num(r.backlog_units)} u · {r.backlog_days:.1f} d</div></div>
         <div><div class="k">SLA breaches</div><div class="v" style="color:{CORAL if r.sla_breach_units > .5 else TEXT}">{num(r.sla_breach_units)} u</div></div>
-        <div><div class="k">Recaptured value</div><div class="v">{usd(r.recovered_value)}</div></div>
-        <div><div class="k">Cost to serve</div><div class="v">{usd(r.cost_to_serve)}</div></div>
+        <div><div class="k">Recaptured value</div><div class="v">{brl(r.recovered_value)}</div></div>
+        <div><div class="k">Cost to serve</div><div class="v">{brl(r.cost_to_serve)}</div></div>
         <div><div class="k">Recapture margin</div><div class="v" style="color:{LIME}">{mg}</div></div></div><div style="height:8px"></div>""")
 
 # ---------------------------------------------------------------- lanes table + policy table
@@ -515,7 +545,8 @@ with lt:
             else:
                 route = f"{r.hub} → {r.facility}"
                 over = r.transit_days - r.sla_days
-                status = (f'<span class="pill late">+{over:.1f} d</span>' if r.late else '<span class="pill ok">On time</span>')
+                late_txt = "+&lt;0.1 d" if over < 0.05 else f"+{over:.1f} d"
+                status = (f'<span class="pill late">{late_txt}</span>' if r.late else '<span class="pill ok">On time</span>')
                 dist = f"{r.distance_km:,.0f} km · {r.transit_days:.1f} / {r.sla_days:.0f} d"
             body.append(f'<tr><td>{route}</td><td><span class="tag" style="--c:{DISP_COLOR[r.disposition]}">{r.disposition}</span></td>'
                         f'<td class="m">{num(r.planned_units)}</td><td class="m">{dist}</td><td>{status}</td></tr>')
@@ -530,8 +561,13 @@ with pt:
         for k in scen_keys:
             s = summary.loc[k]
             body.append(f'<tr class="{"sel" if k == scen else ""}"><td><b>{SCEN[k][1]}</b> <span style="color:{MUTED}">{SHORT[k]}</span></td>'
-                        f'<td class="m">{usd(s.net_contribution)}</td><td class="m">{s.value_recovery_rate:.1%}</td>'
-                        f'<td class="m">{num(s.backlog_units)}</td><td class="m">{num(s.sla_breach_units)}</td></tr>')
-        H(f'<div class="tw"><table class="t"><thead><tr><th>Plan</th><th>Net / wk</th><th>Recapt.</th><th>Backlog</th><th>SLA</th></tr></thead>'
+                        f'<td class="m">{brl(s.net_contribution)}</td><td class="m">{s.value_recovery_rate:.1%}</td>'
+                        f'<td class="m">{num(s.backlog_units)}</td><td class="m">{num(s.units_to_disposal)}</td><td class="m">{num(s.sla_breach_units)}</td></tr>')
+        H(f'<div class="tw"><table class="t"><thead><tr><th>Plan</th><th>Net / wk</th><th>Recapt.</th><th>Backlog</th><th>Disp.</th><th>SLA</th></tr></thead>'
           f'<tbody>{"".join(body)}</tbody></table></div>')
         st.write("")
+
+H(f"""<div style="margin:22px 4px 6px;font-size:11.5px;color:{DIM};line-height:1.6">
+Data: Olist Brazilian E-Commerce Public Dataset (Kaggle, CC BY-NC-SA 4.0). Return candidate = delivered order with a 1-2 star review (proxy).
+Freight cost and transit time are calibrated on Olist shipments; disposition outcomes, facilities, capacities and processing costs are assumptions.
+Amounts in Brazilian reais (R&#36;), per planning week.</div>""")

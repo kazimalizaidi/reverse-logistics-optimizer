@@ -12,7 +12,7 @@ Decision variables
 
 Per-unit arc cost  c[h,f,d] =  shipping + processing + SLA lateness penalty
                               + carbon_price * CO2  -  recovered value
-  shipping  = ship_rate * avg_weight[h,d] * dist[h,f]
+  shipping  = base + per_km * dist[h,f] + per_kg_km * avg_weight[h,d] * dist[h,f]
   lateness  = late_penalty * max(0, transit[h,f] - SLA[d])
   CO2       = co2_per_kg_km * avg_weight[h,d] * dist[h,f] + proc_co2[d]
   value     = avg_price[h,d] * ( yield[f,d]*rate[d] + (1-yield[f,d])*salvage )
@@ -53,7 +53,7 @@ def arc_components(net: Network, dem: Demand, econ: Econ) -> dict:
     dist = net.dist_km[:, :, None]
     w = dem.avg_weight[:, None, :]
     p = dem.avg_price[:, None, :]
-    ship = econ.ship_cost_per_kg_km * w * dist
+    ship = econ.ship_base_cost + econ.ship_cost_per_km * dist + econ.ship_cost_per_kg_km * w * dist
     proc = np.broadcast_to(net.proc_cost[None, :, :], ship.shape).copy()
     late_days = np.maximum(0.0, net.transit_days[:, :, None] - econ.sla_vec()[None, None, :])
     late = econ.late_penalty * late_days * np.ones_like(ship)

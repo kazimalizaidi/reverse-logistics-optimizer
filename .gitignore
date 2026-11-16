@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+
+# raw Olist data is not committed (size and licence); see data/olist/README.md
+data/olist/*.csv
+data/processed/

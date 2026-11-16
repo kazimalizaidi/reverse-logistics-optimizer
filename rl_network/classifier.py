@@ -1,97 +1,131 @@
 """
-Disposition classifier: predicts restock / refurbish / scrap for a return BEFORE it
-reaches a warehouse, using only information available at pickup.
+Return-propensity classifier: for each delivered order, the probability that it becomes a return
+candidate (a 1-2 star review, see olist_data). This is a REAL supervised target: the label comes
+from the data, so every metric below is a genuine out-of-time measurement, with no "oracle".
 
-Model: soft-voting ensemble (RandomForest + HistGradientBoosting + LogisticRegression)
-wrapped in isotonic probability calibration. Calibration matters here because the
-optimizer consumes the probabilities as expected volumes, not just the argmax label.
+Features are limited to what is known when the parcel reaches the customer: price, freight,
+weight, product group, seller and customer state, distance, and the delivery timeline (promised
+vs actual delivery). The review score itself is never a feature.
+
+Model: soft-voting ensemble (random forest + gradient boosting + logistic regression) with
+isotonic probability calibration on the most recent slice of the history. Calibration matters because the optimizer consumes the
+probabilities as EXPECTED return volumes.
 """
 import numpy as np
 import pandas as pd
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import (HistGradientBoostingClassifier, RandomForestClassifier,
-                              VotingClassifier)
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier, VotingClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, log_loss)
+from sklearn.metrics import average_precision_score, brier_score_loss, log_loss, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from .config import DISPOSITIONS
-
-NUM_FEATURES = ["price", "weight_kg", "customer_return_rate", "customer_orders_12m",
-                "customer_tenure_months", "days_since_purchase", "transit_days_to_hub"]
-CAT_FEATURES = ["category", "return_reason", "reported_condition", "origin_hub"]
+NUM_FEATURES = ["price", "freight_value", "n_items", "weight_kg", "volume_cm3", "freight_ratio",
+                "delivery_days", "est_days", "delay_days", "handoff_days", "transit_days",
+                "seller_customer_km", "same_state", "purchase_dow"]
+CAT_FEATURES = ["category_group", "customer_state", "seller_state"]
 FEATURES = NUM_FEATURES + CAT_FEATURES
+TARGET = "return_candidate"
 
 
-def _ensemble(seed: int) -> Pipeline:
+def _pipeline(seed: int, fast: bool) -> Pipeline:
     pre = ColumnTransformer([
-        ("num", StandardScaler(), NUM_FEATURES),
+        ("num", Pipeline([("imp", SimpleImputer(strategy="median")), ("sc", StandardScaler())]), NUM_FEATURES),
         ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), CAT_FEATURES),
     ])
-    rf = RandomForestClassifier(n_estimators=300, min_samples_leaf=10, n_jobs=-1, random_state=seed)
-    hgb = HistGradientBoostingClassifier(max_depth=4, learning_rate=0.06, max_iter=250,
-                                         random_state=seed)
+    hgb = HistGradientBoostingClassifier(max_depth=4, learning_rate=0.06, max_iter=250, random_state=seed)
+    if fast:                     # used for the many retrains of the rolling backtest
+        return Pipeline([("pre", pre), ("clf", hgb)])
+    rf = RandomForestClassifier(n_estimators=150, min_samples_leaf=20, n_jobs=-1, random_state=seed)
     lr = LogisticRegression(max_iter=2000, C=1.0)
-    vote = VotingClassifier([("rf", rf), ("hgb", hgb), ("lr", lr)], voting="soft",
-                            weights=[1, 2, 1])
+    vote = VotingClassifier([("rf", rf), ("hgb", hgb), ("lr", lr)], voting="soft", weights=[1, 2, 1])
     return Pipeline([("pre", pre), ("clf", vote)])
 
 
-def train(train_df: pd.DataFrame, seed: int):
-    """Returns (raw_model, calibrated_model)."""
-    X, y = train_df[FEATURES], train_df["disposition_idx"].values
-    raw = _ensemble(seed).fit(X, y)
-    cal = CalibratedClassifierCV(_ensemble(seed), method="isotonic", cv=3).fit(X, y)
-    return raw, cal
+class IsotonicCalibrated:
+    """A fitted model plus an isotonic map from its probabilities to observed frequencies."""
+
+    def __init__(self, base, iso):
+        self.base, self.iso = base, iso
+
+    def predict_proba(self, X):
+        q = self.iso.predict(self.base.predict_proba(X)[:, 1])
+        return np.c_[1 - q, q]
 
 
-def expected_calibration_error(probs: np.ndarray, y: np.ndarray, bins: int = 10) -> float:
-    """Top-label ECE: weighted mean |accuracy - confidence| over confidence bins."""
-    conf = probs.max(axis=1)
-    pred = probs.argmax(axis=1)
-    edges = np.linspace(0, 1, bins + 1)
+def train(train_df: pd.DataFrame, seed: int, fast: bool = False, calib_frac: float = 0.15):
+    """Fit on the older part of the history and calibrate on the NEWEST `calib_frac` of it
+    (rows are ordered by delivery date), mimicking deployment: the calibration data is always
+    more recent than the data the model learned from. Returns (raw_model, calibrated_model).
+    `fast=True` uses a single gradient-boosting model (rolling backtest)."""
+    d = train_df.sort_values("order_delivered_customer_date")
+    n_cal = max(200, int(len(d) * calib_frac))
+    fit_df, cal_df = d.iloc[:-n_cal], d.iloc[-n_cal:]
+    raw = _pipeline(seed, fast).fit(fit_df[FEATURES], fit_df[TARGET].values)
+    p_cal = raw.predict_proba(cal_df[FEATURES])[:, 1]
+    iso = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0).fit(p_cal, cal_df[TARGET].values)
+    return raw, IsotonicCalibrated(raw, iso)
+
+
+def predict(model, df: pd.DataFrame) -> np.ndarray:
+    return model.predict_proba(df[FEATURES])[:, 1]
+
+
+def expected_calibration_error(p: np.ndarray, y: np.ndarray, bins: int = 10) -> float:
+    """Weighted mean |observed rate - mean predicted probability| over equal-count bins."""
+    order = np.argsort(p)
     ece = 0.0
-    for lo, hi in zip(edges[:-1], edges[1:]):
-        m = (conf > lo) & (conf <= hi)
-        if m.any():
-            ece += m.mean() * abs((pred[m] == y[m]).mean() - conf[m].mean())
+    for idx in np.array_split(order, bins):
+        if len(idx):
+            ece += len(idx) / len(p) * abs(y[idx].mean() - p[idx].mean())
     return float(ece)
 
 
-def multiclass_brier(probs: np.ndarray, y: np.ndarray) -> float:
-    onehot = np.eye(probs.shape[1])[y]
-    return float(((probs - onehot) ** 2).sum(axis=1).mean())
+def _scores(y, p):
+    p = np.clip(p, 1e-6, 1 - 1e-6)
+    return {"roc_auc": float(roc_auc_score(y, p)) if len(np.unique(y)) > 1 else float("nan"),
+            "pr_auc": float(average_precision_score(y, p)),
+            "brier": float(brier_score_loss(y, p)),
+            "log_loss": float(log_loss(y, p, labels=[0, 1])),
+            "ece": expected_calibration_error(p, y),
+            "mean_predicted": float(p.mean()), "observed_rate": float(y.mean())}
 
 
-def evaluate(probs: np.ndarray, y: np.ndarray, true_probs: np.ndarray, prior: np.ndarray) -> dict:
-    """Metrics vs. three reference points: the majority-class guess, the training-prior
-    probabilities (no-model), and the Bayes-optimal oracle (generator's true probabilities)."""
-    pred = probs.argmax(axis=1)
-    out = {
-        "accuracy": float(accuracy_score(y, pred)),
-        "macro_f1": float(f1_score(y, pred, average="macro")),
-        "log_loss": float(log_loss(y, probs, labels=[0, 1, 2])),
-        "brier": multiclass_brier(probs, y),
-        "ece_top_label": expected_calibration_error(probs, y),
-        "confusion_matrix(rows=true, cols=pred)": confusion_matrix(y, pred, labels=[0, 1, 2]).tolist(),
-        "classes": DISPOSITIONS,
-        "reference_majority_class_accuracy": float((y == prior.argmax()).mean()),
-        "reference_prior_log_loss": float(log_loss(y, np.tile(prior, (len(y), 1)), labels=[0, 1, 2])),
-        "reference_oracle_accuracy": float(accuracy_score(y, true_probs.argmax(axis=1))),
-        "reference_oracle_log_loss": float(log_loss(y, true_probs, labels=[0, 1, 2])),
-    }
+def baselines(train_df: pd.DataFrame, week_df: pd.DataFrame) -> dict:
+    """Simple forecasts a planner could make WITHOUT machine learning, fitted on training data."""
+    g = train_df[TARGET].mean()
+    hub = train_df.groupby("hub")[TARGET].mean()
+    hub_late = train_df.groupby(["hub", "late"])[TARGET].mean()
+    p_global = np.full(len(week_df), g)
+    p_hub = week_df["hub"].map(hub).fillna(g).values
+    keys = list(zip(week_df["hub"], week_df["late"]))
+    p_rule = np.array([hub_late.get(k, g) for k in keys])
+    return {"global_rate": p_global, "hub_rate": p_hub, "late_x_hub_rule": p_rule}
+
+
+def evaluate(p: np.ndarray, week_df: pd.DataFrame, train_df: pd.DataFrame) -> dict:
+    y = week_df[TARGET].values
+    out = {"model": _scores(y, p)}
+    for name, pb in baselines(train_df, week_df).items():
+        out[name] = _scores(y, pb)
+    out["lift_top_decile"] = float(y[np.argsort(-p)[: max(1, len(p) // 10)]].mean() / max(y.mean(), 1e-9))
     return out
 
 
-def feature_importance(raw_model: Pipeline, df: pd.DataFrame, seed: int) -> pd.DataFrame:
-    """Permutation importance of ORIGINAL (pre-encoding) features, measured as the
-    increase in log-loss when a feature is shuffled."""
+def calibration_table(p: np.ndarray, y: np.ndarray, bins: int = 10) -> pd.DataFrame:
+    order = np.argsort(p)
+    rows = []
+    for i, idx in enumerate(np.array_split(order, bins), 1):
+        rows.append(dict(bin=i, n=len(idx), mean_predicted=float(p[idx].mean()), observed_rate=float(y[idx].mean())))
+    return pd.DataFrame(rows)
+
+
+def feature_importance(raw_model: Pipeline, week_df: pd.DataFrame, seed: int) -> pd.DataFrame:
+    """Permutation importance of ORIGINAL features: drop in ROC-AUC when a feature is shuffled."""
     from sklearn.inspection import permutation_importance
-    sub = df.sample(min(3000, len(df)), random_state=seed)
-    res = permutation_importance(raw_model, sub[FEATURES], sub["disposition_idx"].values,
-                                 n_repeats=5, random_state=seed, scoring="neg_log_loss", n_jobs=1)
-    return (pd.DataFrame({"feature": FEATURES, "logloss_increase": res.importances_mean,
-                          "std": res.importances_std})
-            .sort_values("logloss_increase", ascending=False).reset_index(drop=True))
+    res = permutation_importance(raw_model, week_df[FEATURES], week_df[TARGET].values, n_repeats=5,
+                                 random_state=seed, scoring="roc_auc", n_jobs=1)
+    return (pd.DataFrame({"feature": FEATURES, "auc_drop": res.importances_mean, "std": res.importances_std})
+            .sort_values("auc_drop", ascending=False).reset_index(drop=True))

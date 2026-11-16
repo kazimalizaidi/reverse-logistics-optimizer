@@ -1,0 +1,24 @@
+{
+  "n_weeks": 32,
+  "retrain_every_weeks": 4,
+  "mean_net_contribution_by_plan": {
+    "A_greedy_nearest": 5467.376597693617,
+    "B_milp_prior_only": 7803.0674680414795,
+    "C_milp_classifier": 10038.488487015782,
+    "D_milp_oracle": 10979.998364137264
+  },
+  "mean_gain_C_over_B": 2235.4210189743035,
+  "median_gain_C_over_B": 1588.4482672934892,
+  "mean_gain_C_over_A": 4571.111889322162,
+  "mean_gap_D_over_C": 941.5098771214796,
+  "share_weeks_C_beats_B": 0.90625,
+  "share_weeks_C_beats_A": 1.0,
+  "n_surge_weeks": 11,
+  "mean_gain_C_over_B_surge_weeks": 4316.10605131486,
+  "mean_gain_C_over_B_normal_weeks": 1145.5383829863931,
+  "mean_auc": 0.7567375607652964,
+  "mean_brier_model": 0.08886652841999347,
+  "mean_brier_hub_rate": 0.11921002951353735,
+  "returns_forecast_wape_classifier": 0.054458456169090876,
+  "returns_forecast_wape_hub_rate": 0.28621634633260756
+}

@@ -51,7 +51,7 @@ def build_network(total_weekly_volume: float, econ: Econ) -> Network:
             lat2, lon2 = city_xy[f["city"]]
             km = haversine_km(lat1, lon1, lat2, lon2) * econ.road_factor
             dist[i, j] = max(km, econ.min_local_km)
-    transit = econ.handling_days + dist / econ.speed_km_day
+    transit = econ.transit_base_days + econ.transit_sqrt_coef * np.sqrt(dist)
 
     cap_d = np.array([[f["cap_share"][d] for d in DISPOSITIONS] for f in FACILITIES]) * total_weekly_volume
     cap_total = np.array([f["cap_total"] for f in FACILITIES]) * total_weekly_volume
