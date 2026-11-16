@@ -13,7 +13,7 @@
 
 Most supply chain projects look at the forward flow: getting products to customers. This one looks at the way back. When a marketplace takes returns, every parcel has to go somewhere (restock, refurbish or scrap), and each choice trades off shipping cost, processing capacity, delivery deadlines, recovered value and emissions.
 
-This project builds the full decision loop on **real Olist marketplace data** and puts a **Returns Control Tower** dashboard on top of it:
+This project builds the full decision loop for that problem and a Returns Control Tower dashboard on top of it:
 
 1. **Predict** which delivered orders will come back, before they do.
 2. **Optimize** where the returns should be routed and which facilities should be open.
@@ -27,7 +27,7 @@ This project includes:
 - 🧮 A Mixed-Integer Linear Program (MILP) that routes returns and decides which sites open or close
 - 🚚 Freight cost and transit time **calibrated on real Olist shipments**, not invented
 - 🔁 A realized-week evaluator, plus a **32-week rolling backtest**
-- 🛰 A Streamlit Returns Control Tower with a Brazil lane map, facility drill-down and plan comparison
+- 🛰 A live Streamlit Returns Control Tower (Dashboard) with a Brazil lane map, facility drill-down and plan comparison
 - ✅ 23 tests, including MILP cases solved by hand
 
 ---
